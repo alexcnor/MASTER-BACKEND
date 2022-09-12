@@ -7,15 +7,45 @@ parameters:
 - name: Ambiente
   displayName: Ambiente
   type: string
-  # default: ubuntu-latest
   values:
   - dev
   - qa
   - prod
+
 - name: Cliente
   displayName: Cliente
   type: string
-  # default: ubuntu-latest
+
+- name: Tipo componente
+  displayName: Tipo componente
+  type: string
+  values:
+  - Infraestructura
+  - Servicio
+
+- name: Componente
+  displayName: Componente
+  type: string
+  values:
+  - Kubernetes cluster
+  - Mysql
+
+- name: VM Size
+  displayName: VM Size
+  type: string
+  values:
+  - Standard_D2a_v2
+  - Standard_D4_v3
+
+- name: Número de nodos
+  displayName: Componente
+  type: string
+  values:
+  - 1
+  - 2
+  - 3
+  - 4
+
 
 
 trigger:
