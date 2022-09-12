@@ -62,5 +62,7 @@ steps:
 
 - script: |
     npm install
+    npm install webpack
+    npm link webpack
     npm run build
   displayName: 'npm install and build'
