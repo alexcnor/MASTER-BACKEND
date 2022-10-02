@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { infrastructureController } from './infrastructure.controller';
-import { InfrastructureService } from './app.service';
+import { InfrastructureService } from './infrastructure.service';
 import { InfraDto } from './dto';
 
 describe('AppController', () => {
