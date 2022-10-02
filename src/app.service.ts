@@ -1,8 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { InfraDto } from './dto';
 
 @Injectable()
 export class AppService {
-  getHello(): string {
+  private readonly log = new Logger(AppService.name);
+
+  create(body: InfraDto) {
+    this.log.debug(body);
     return 'Hello World!';
   }
 }

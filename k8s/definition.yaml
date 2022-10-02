@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-catalog-backend
+  namespace: service-catalog
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: service-catalog-backend
+  template:
+    metadata:
+      labels:
+        component: service-catalog-backend
+    spec:
+      containers:
+        - name: service-catalog-backend
+          image: tecnoandina01.azurecr.io/service-catalog-backend:latest
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+      imagePullSecrets:
+        - name: tecnoregistry
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-catalog-backend
+  namespace: service-catalog
+spec:
+  selector:
+    component: service-catalog-backend
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+
