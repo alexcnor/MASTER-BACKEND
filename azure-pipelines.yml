@@ -122,7 +122,7 @@ stages:
           - task: DownloadPipelineArtifact@2
             inputs:
               source: 'current'
-              artifact: 'image'
+              artifact: 'image-$(imageName)'
               path: '$(Build.ArtifactStagingDirectory)'
           - bash: 'cd $(Build.ArtifactStagingDirectory) && ls -la'
           - task: PublishBuildArtifacts@1
