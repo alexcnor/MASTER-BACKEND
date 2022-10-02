@@ -19,6 +19,6 @@ describe('AppController (e2e)', () => {
     return request(app.getHttpServer())
       .post('/infrastructure/create')
       .expect(201)
-      .expect('Hello World!');
+      .expect('');
   });
 });

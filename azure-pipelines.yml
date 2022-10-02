@@ -47,6 +47,9 @@ stages:
     jobs:
       - job:
         steps:
+          - script: |
+              sed -i "s/{{version}}/$(build.BuildNumber)/" Dockerfile
+            displayName: Set version Env
           - task: Npm@1
             displayName: Install dependecies
             inputs:
