@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { infrastructureController } from './infrastructure.controller';
-import { InfrastructureService } from './infrastructure.service';
 import { InfraDto } from './dto';
 import { HttpModule } from '@nestjs/axios';
+import { AzureDevopsService, InfrastructureService } from './service';
 
 describe('AppController', () => {
   let appController: infrastructureController;
@@ -11,10 +11,11 @@ describe('AppController', () => {
       imports: [HttpModule],
       controllers: [infrastructureController],
       providers: [
+        InfrastructureService,
         {
-          provide: InfrastructureService,
+          provide: AzureDevopsService,
           useValue: {
-            createAKS: () => true,
+            runPipeline: () => true,
           },
         },
       ],
@@ -24,10 +25,10 @@ describe('AppController', () => {
   });
 
   describe('root', () => {
-    it('should return true"', () => {
+    it('should return true"', async () => {
       const dto = new InfraDto();
       dto.componente = 'kubernetes cluster';
-      expect(appController.create(dto)).toBe(true);
+      expect(await appController.create(dto)).toBe(true);
     });
   });
 });

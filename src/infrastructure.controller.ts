@@ -1,5 +1,5 @@
 import { Body, Controller, Post } from '@nestjs/common';
-import { InfrastructureService } from './infrastructure.service';
+import { InfrastructureService } from './service';
 import { InfraDto } from './dto';
 
 @Controller('/infrastructure')
