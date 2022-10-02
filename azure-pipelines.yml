@@ -4,33 +4,118 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/java
 
 trigger:
-- master
+  - master
+
+resources:
+  - repo: self
 
 pool:
   vmImage: ubuntu-latest
 
-steps:
-- task: Maven@3
-  inputs:
-    mavenPomFile: 'pom.xml'
-    mavenOptions: '-Xmx3072m'
-    javaHomeOption: 'JDKVersion'
-    jdkVersionOption: '1.8'
-    jdkArchitectureOption: 'x64'
-    publishJUnitResults: true
-    testResultsFiles: '**/surefire-reports/TEST-*.xml'
-    goals: 'package'
-- task: CopyFiles@2
-  displayName: 'Copy Files to: $(Build.ArtifactStagingDirectory)'
-  inputs:
-    SourceFolder: '$(Build.SourcesDirectory)'
-    Contents: '**/*.jar'
-    TargetFolder: '$(Build.ArtifactStagingDirectory)'
-    CleanTargetFolder: true
-    preserveTimestamp: true
-- task: PublishBuildArtifacts@1
-  displayName: 'Publish Artifact: webapp-runner-7.0.57.1.jar'
-  inputs:
-    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-    ArtifactName: 'webapp-runner-7.0.57.1.jar'
-    publishLocation: 'Container'
+variables:
+  - name: 'imageName'
+    value: 'service-catalog-backend'
+  - name: 'imageTag'
+    value: 'v1.0.$(build.buildId)'
+  - name: 'projectName'
+    value: 'backend'
+
+stages:
+  - stage: init
+    displayName: Init
+    jobs:
+      - job:
+        steps:
+          - script: |
+              echo "Working"
+  - stage: security
+    dependsOn: init
+    displayName: Snyk Security Scan
+    jobs:
+      - job:
+        steps:
+          - task: Npm@1
+            displayName: Install dependecies
+            inputs:
+              command: install
+          - task: SnykSecurityScan@1
+            inputs:
+              serviceConnectionEndpoint: 'Snyk'
+              testType: 'app'
+              monitorWhen: 'always'
+              failOnIssues: false
+              projectName: $(projectName)
+              organization: 'c60c0b73-b647-496b-874f-f4487ef9d092'
+  - stage: docker
+    displayName: Build Docker Images
+    dependsOn: init
+    jobs:
+      - job:
+        steps:
+          - task: Npm@1
+            displayName: Install dependecies
+            inputs:
+              command: install
+          - task: Npm@1
+            displayName: Transpile Code
+            inputs:
+              command: custom
+              customCommand: run build
+              verbose: true
+          - task: Docker@2
+            displayName: Docker Build
+            inputs:
+              command: build
+              repository: $(imageName)
+              arguments: --no-cache
+              tags: |
+                $(imageTag)
+          - task: PowerShell@2
+            inputs:
+              targetType: 'inline'
+              script: |
+                docker image save -o $(Build.SourcesDirectory)/image.tar $(imageName):$(imageTag)
+          - task: CopyFiles@2
+            displayName: 'Copy Files images'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)'
+              Contents: 'image.tar'
+              TargetFolder: '$(Build.ArtifactStagingDirectory)'
+              CleanTargetFolder: true
+              preserveTimestamp: true
+          - script: |
+              sed -i "s/latest/$(imageTag)/" ./k8s/definition.yaml
+            displayName: 'Set version in Kubernetes definition'
+          - task: CopyFiles@2
+            displayName: 'Copy Files kubernetes definition'
+            inputs:
+              SourceFolder: '$(Build.SourcesDirectory)/k8s'
+              Contents: '*'
+              TargetFolder: '$(Build.ArtifactStagingDirectory)'
+              CleanTargetFolder: false
+              preserveTimestamp: true
+          - script: |
+              echo $(imageTag) > $(Build.ArtifactStagingDirectory)/tag.txt
+            displayName: 'Save tag to get in release pipeline'
+          - bash: 'cd $(Build.ArtifactStagingDirectory) && ls -la'
+          - task: PublishPipelineArtifact@1
+            inputs:
+              targetPath: '$(Build.ArtifactStagingDirectory)'
+              artifactName: 'image'
+  - stage:
+    dependsOn: ['docker', 'security']
+    displayName: Publish Artifact
+    jobs:
+      - job:
+        steps:
+          - task: DownloadPipelineArtifact@2
+            inputs:
+              source: 'current'
+              artifact: 'image'
+              path: '$(Build.ArtifactStagingDirectory)'
+          - bash: 'cd $(Build.ArtifactStagingDirectory) && ls -la'
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Artifact'
+            inputs:
+              PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+              ArtifactName: 'service-catalog'
